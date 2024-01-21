@@ -1,5 +1,5 @@
 from datetime import date
-from flask import Flask, abort, render_template, redirect, url_for, flash
+from flask import Flask, abort, render_template, redirect, url_for, flash, request
 from flask_bootstrap import Bootstrap5
 from flask_gravatar import Gravatar
 from flask_login import login_user, LoginManager, current_user, logout_user, login_required
@@ -7,10 +7,14 @@ from flask_login import login_user, LoginManager, current_user, logout_user, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from schema import db, BlogPost, User, Comments
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm, ckeditor
+from dotenv import dotenv_values
+from smtplib import SMTP
 
+
+env = dotenv_values()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
+app.config['SECRET_KEY'] = env['FLASK_KEY']
 ckeditor.init_app(app)
 Bootstrap5(app)
 login_manager = LoginManager()
@@ -34,7 +38,7 @@ def load_user(user_id):
 
 
 # CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = env['SQL_URI']
 db.init_app(app)
 
 
@@ -168,10 +172,23 @@ def about():
     return render_template("about.html")
 
 
-@app.route("/contact")
+@app.route("/contact", methods=['POST', 'GET'])
 def contact():
+    if request.method == 'POST':
+        body = (f"Subject:You are being contacted!!!\n\n"
+                f"Name: {request.form['name']}\n"
+                f"Email: {request.form['email']}\n"
+                f"Mobile: {request.form['phone']}\n"
+                f"Message: {request.form['message']}")
+        with SMTP("smtp.gmail.com", 587) as connection:
+            connection.starttls()
+            connection.login(user=env['SENDER_EMAIL'], password=env['SENDER_PASSWORD'])
+            connection.sendmail(from_addr=env['SENDER_EMAIL'], to_addrs=env['RECEIVER_EMAIL'], msg=body)
+
+        flash('Your message has been shared us!')
+        return render_template('contact.html')
     return render_template("contact.html")
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5002)
+    app.run(debug=False)

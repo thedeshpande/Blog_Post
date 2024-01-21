@@ -29,9 +29,14 @@
           Want to get in touch? Fill out the form below to send me a message and
           I will get back to you as soon as possible!
         </p>
+        {% with messages = get_flashed_messages() %}
+        {% if messages: %}
+          {% for message in messages: %}
+            <p class="flash">{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+        {% endwith %}
         <div class="my-5">
-          <!-- * * * * * * * * * * * * * * *-->
-          <!-- * * Simplified SB Contact Form for the Tutorial* *-->
           <form
             id="contactForm"
             name="sentMessage"
@@ -88,7 +93,7 @@
               id="submitButton"
               type="submit"
             >
-              NOT USED in Day 69
+              Submit
             </button>
           </form>
         </div>
